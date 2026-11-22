@@ -1,6 +1,6 @@
 # model-lab: your skills are worse than they could be
 
-> Details, explanations, and story with bad jokes will be published later on [rakshazi.me/blog](https://rakshazi.me/blog/) and linked here. In the meantime, check what's already there (and oh boy, there is *a lot* of unhinged stuff, I promise).
+> Details, explanations, and story of the skill with bad jokes: [rakshazi.me/blog/model-lab-skill](https://rakshazi.me/blog/model-lab-skill/)
 
 I use coding agents, and also use popular agent skills, but sometimes (turns out, a lot), I need to write my own skills,
 usually to give domain-specific knowledge or establish a proper procedure when doing stuff.

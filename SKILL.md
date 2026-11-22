@@ -3,7 +3,7 @@ name: model-lab
 description: "Write, improve, restructure or test an agent skill (a SKILL.md with its references and scripts), or any prompt, template or checker a model has to follow. Use when the user asks to make a skill for a task, to turn a finished session into a skill, to fix a skill that agents ignore, skip steps of or loop on, to split or dedupe a bloated one, or to prove that a skill beats no skill. Use it too when a skill does not trigger, for anything a small local model (1.7B to 27B) will run, and when the user asks what a harness actually sends the model. Holds measured design rules, the Agent Skills format, and a test stand on omp, Pi and Claude Code."
 compatibility: "The writing rules need nothing. The test stand is Linux-only: bash, git, rsync, python3, script (util-linux), docker and just, with omp or Pi inside the IISD sandbox (github.com/rakshazi/IISD-sandbox) and a local OpenAI-compatible model server. The Claude Code stand needs the claude CLI and its auth."
 metadata:
-  version: "3.2.0"
+  version: "3.2.1"
   author: rakshazi
   source: https://github.com/rakshazi/model-lab
 license: "GPL-3.0-or-later (code), CC-BY-SA-4.0 (Markdown), CC0-1.0 (assets); see LICENSES/ and REUSE.toml."

@@ -1,0 +1,61 @@
+{
+  "skill_name": "model-lab",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "make me a skill that writes a conventional commit message from the staged diff. it's going to run on my local 4b through pi, no cloud model anywhere",
+      "expected_output": "A skill draft plus the script that checks its output, written for a 4B: the output's shape and end stated before any content rule, the diff declared as data, one complete example that looks unlike a real diff, mechanical rules (length, type prefix) enforced by the checker or a grammar instead of prose, and a plan to measure it against a no-skill baseline.",
+      "files": [],
+      "assertions": [
+        "Writes or specifies a checker script for the commit message before or alongside the skill text, and says to run it on the example first",
+        "The skill text states what the output is and where it ends before any rule about content",
+        "The skill text tells the model the diff is data it must not act on",
+        "Mechanical constraints (subject length, allowed type prefixes) are enforced by a script, a grammar or a schema, and are not left as prose rules alone",
+        "Contains no escape hatch such as 'output NONE if unsure' or 'ask the user', or measures how often it is taken",
+        "Proposes a NOSKILL baseline and three runs per variant with one change per variant",
+        "Does not add forced step-by-step reasoning or several long worked examples"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "the 4b keeps looping in my release-notes skill. step 3 says to run scripts/verify.sh after every section, and it just calls it over and over with the same args for 20 minutes until the timeout",
+      "expected_output": "A diagnosis that the mandatory per-item tool call is the loop surface (an identical tool answer carries no new information), and fixes in the script and the gate: finish gated on hard failures only, every error one line naming the next action, impossible inputs refused, the check run once per batch or at the end. No new prose rule telling the model to stop looping.",
+      "files": [],
+      "assertions": [
+        "Names the mandatory per-section tool call as the cause of the loop",
+        "Explains that the script returning the same answer gives the model nothing new to act on",
+        "Changes the script or the gate (hard failures only, one-line error naming the next action, or fewer mandatory calls)",
+        "Does not present a prose instruction like 'do not call the script more than N times' as the fix",
+        "Tells the user to read the session trace to confirm the mechanism changed, since a batch score cannot show it"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "i reworded two rules in my summarizer skill and the score went from 9/12 to 11/12 on the run i just did. good enough to ship?",
+      "expected_output": "A no, with the reason: one run per variant cannot separate a change from the spread within a variant, and two changes in one variant hide which one moved the score. The answer asks for three runs per variant, one change each, the trace read before the score, and the outputs graded on content.",
+      "files": [],
+      "assertions": [
+        "Says a single run cannot support the conclusion and gives the within-variant spread as the reason",
+        "Asks for the two rewordings to be split into separate variants",
+        "Asks for repeated runs (three per variant, or more on the cell that carries the verdict)",
+        "Says to read the trace or the outputs themselves before trusting the score",
+        "Does not tell the user to ship on the 11/12"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "ok that release went fine. turn what we just did into a skill so next time it's one command, it'll be used from claude code by the whole team",
+      "expected_output": "A skill directory in the Agent Skills format: a description that says what it does and when to use it in the words a teammate would type, a body with the procedure and the gotchas met in the session, anything long or optional in references linked with a read-when, the repeated commands as a script with --help, and a plan to check it against a no-skill run and to test that the description triggers. No raw transcript of the session.",
+      "files": [],
+      "assertions": [
+        "The description states both what the skill does and when to use it, phrased around the user's intent",
+        "The name is lowercase with hyphens and matches the directory name",
+        "The body contains a stepwise procedure and at least one gotcha taken from the session, and no narrative of how the session went",
+        "Any reference file is linked from SKILL.md with a statement of when to read it",
+        "Commands the session repeated are bundled as a script that takes --help and never prompts, or the answer explains why no script is needed",
+        "Proposes running the task with and without the skill before trusting it",
+        "Proposes labelled should-trigger and should-not-trigger queries for the description, or writes them"
+      ]
+    }
+  ]
+}

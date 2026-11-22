@@ -1,0 +1,21 @@
+{
+  "skill_name": "my-skill",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write an AGENTS.md for this repository.",
+      "expected_output": "A root AGENTS.md that names the real make targets, the gitignored per-engineer config, the landmines a newcomer trips on, and asks before targets that drop data.",
+      "outputs": ["AGENTS.md"],
+      "context": ["Makefile", "README.md"],
+      "assertions": [
+        {"text": "Names the build command", "grep": "make build"},
+        {"text": "Mentions the per-engineer config file", "grep": "config.local.toml"},
+        {"text": "No invented make test target", "absent": "make test"},
+        {"text": "Has a Commands section", "regex": "^## .*[Cc]ommand"},
+        {"text": "Leaves no scaffolding behind", "cmd": "test ! -e AGENTS.ledger.md"},
+        "Marks db-reset (or another target that drops data) as ask-first, or warns that it wipes the local database",
+        "Every command it lists exists in the Makefile or the README; no command is invented"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# One permission rule per line for scripts/claude-code/run.sh. `Bash(x:*)` does not cover a bare `x`, so every
+# command gets both forms. Anything unlisted is denied in print mode, and a denial reads to the model as
+# a puzzle it retries: add the lab's own tools (the skill's checker, the build) in a copy of this file.
+Read
+Edit
+Write
+Grep
+Glob
+Bash(cd *)
+Bash(ls)
+Bash(ls *)
+Bash(cat *)
+Bash(head *)
+Bash(tail *)
+Bash(wc *)
+Bash(grep *)
+Bash(rg *)
+Bash(find *)
+Bash(awk *)
+Bash(sed -n *)
+Bash(sort *)
+Bash(uniq *)
+Bash(git status)
+Bash(git status *)
+Bash(git diff)
+Bash(git diff *)
+Bash(git log *)
+Bash(git show *)
+Bash(git grep *)
+Bash(git ls-files *)
+Bash(git blame *)
+Bash(git rev-parse *)
+Bash(git merge-base *)

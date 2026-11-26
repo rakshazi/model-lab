@@ -11,10 +11,10 @@ for n in 1 2 3; do SKILL=<skill> LAB=/tmp/<skill>-lab COLLECT="AGENTS.md" MAXTIM
 ```
 
 - **The model id is the one your omp `models.yml` gives it**; `local/qwen3.5-4b` is an example.
-- **The skill is read from `~/.omp/agent/skills/<skill>`** and frozen at `~/.omp/lab/skills/<variant>/` on first use of a variant name. Sessions land in `~/.omp/lab/sessions/<variant>/<n>/*.jsonl`. Both live under `~/.omp` because that is the only host dir the sandbox mounts besides the workspace.
+- **The skill is read from `~/.omp/agent/skills/<skill>`** and frozen at `$LAB/snap/<variant>/` on first use of a variant name. Sessions land in `RUN/session/*.jsonl`, and `session.txt` names the file. During a run only `~/.omp/lab` holds lab files in the mount: this variant's skill and the session, wiped after.
 - **Every knob is in `scripts/omp/run.sh --help`:** `ARGS`, `NOSKILL`, `CONTEXT`, `OMPFLAGS`, `TOOLS`, `LEAN=1`, `SKILLSNAP`, `SKILLSRC`.
 - **Inside the container** `~/.omp` is `/home/agent/.omp`, and the cwd is `/home/agent/workspace/<cwd with / turned into ->`.
-- **The sandbox traps are written up on the Pi page and hold here too:** container paths in the output, a skill that writes outside the repo, a skill that calls its script by installed path, two labs sharing a variant name. `references/agents/pi.md`, "Running a batch" (read when a host-side check cannot find a path the run cited, or a run starts from the previous run's file).
+- **The sandbox traps are written up on the Pi page and hold here too:** container paths in the output, a skill that writes outside the repo, a skill that calls its script by installed path, a run that finds other variants' files. `references/agents/pi.md`, "Running a batch" (read when a host-side check cannot find a path the run cited, or a run starts from the previous run's file).
 
 ## Probing
 

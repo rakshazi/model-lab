@@ -24,7 +24,7 @@ Options:
 
 Exit: 0 summarised; 2 bad invocation or unreadable file.
 
-Example: python3 -I scripts/trace.py ~/.omp/lab/sessions/v1/1/*.jsonl --after 'the work is done'"""
+Example: python3 -I scripts/trace.py "$(cat /tmp/x-lab/runs/v1/1/session.txt)" --after 'the work is done'"""
 
 
 def ts(s):

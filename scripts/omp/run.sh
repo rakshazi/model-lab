@@ -22,9 +22,10 @@
 #
 # After the run, when present: $LAB/check.sh RUN SNAP, $LAB/grade.sh RUN SESSDIR,
 # and scripts/assert.py RUN when $LAB/evals.json exists.
-# Out: $LAB/runs/VARIANT/N/{repo,prompt.txt,session.log,result.txt,status.txt,trace.json,timing.json,
-#      COLLECT files,check.txt,grade.txt,grading.json}
-# Sessions: ~/.omp/lab/sessions/VARIANT/N (under ~/.omp because the container mounts it).
+# Out: $LAB/runs/VARIANT/N/{repo,prompt.txt,session.log,session.txt,result.txt,status.txt,trace.json,
+#      timing.json,COLLECT files,check.txt,grade.txt,grading.json,session/}
+# Snapshots: $LAB/snap/VARIANT. During a run only ~/.omp/lab exists in the mount, holding
+# this variant's skill and the session; the session moves to RUN/session afterwards.
 # Exit: 0 after any run (the run's own exit is in result.txt); 2 on bad invocation.
 #
 # Example: SKILL=my-skill COLLECT=AGENTS.md scripts/omp/run.sh v1 1 local/qwen3.5-4b
@@ -38,12 +39,18 @@ VARIANT=$1; N=$2; MODEL=$3
 SRC=${SKILLSRC:-$HOME/.omp/agent/skills/$SKILL}
 [[ -f $SRC/SKILL.md ]] || { echo "error: no SKILL.md in $SRC; set SKILL or SKILLSRC" >&2; exit 2; }
 # the snapshot freezes the skill per variant, so the live skill can be edited mid-batch
-SNAP=$HOME/.omp/lab/skills/${SKILLSNAP:-$VARIANT}
+SNAP=$LAB/snap/${SKILLSNAP:-$VARIANT}
 [[ -d $SNAP ]] || { mkdir -p "$SNAP"; cp -r "$SRC/." "$SNAP/"; rm -rf "$SNAP/.git"; }
-CSNAP=/home/agent/.omp/lab/skills/${SKILLSNAP:-$VARIANT}
-SESS=/home/agent/.omp/lab/sessions/$VARIANT/$N
+# the container mounts all of ~/.omp, so it gets a staging dir holding this variant's skill alone
+STAGE=$HOME/.omp/lab
+exec 8>"$HOME/.omp/lab.lock"
+flock -n 8 || { echo "error: another lab run holds $HOME/.omp/lab.lock" >&2; exit 2; }
+rm -rf "$STAGE"; mkdir -p "$STAGE/session"; cp -r "$SNAP" "$STAGE/skill"
+CSNAP=/home/agent/.omp/lab/skill
+SESS=/home/agent/.omp/lab/session
 RUN=$LAB/runs/$VARIANT/$N
-rm -rf "$RUN" "$HOME/.omp/lab/sessions/$VARIANT/$N"; mkdir -p "$RUN"
+HSESS=$RUN/session
+rm -rf "$RUN"; mkdir -p "$RUN"
 git clone -q "$LAB/base" "$RUN/repo" && git -C "$RUN/repo" remote remove origin
 
 # print mode does not expand /skill:NAME; rebuild the wrapper the TUI would send
@@ -79,14 +86,16 @@ t0=$(date +%s)
 sleep 8
 ( cd "$RUN/repo" && script -qefc "$cmdstr" "$RUN/session.log" >/dev/null 2>&1 )
 echo "exit=$? wall=$(( $(date +%s) - t0 ))s" > "$RUN/result.txt"
+cp -r "$STAGE/session" "$HSESS"; rm -rf "$STAGE"
 
 for f in ${COLLECT:-}; do [[ -f $RUN/repo/$f ]] && cp "$RUN/repo/$f" "$RUN/"; done
 ( cd "$RUN/repo" && git status --short ) > "$RUN/status.txt"
 # per-lab hooks: check.sh RUN SNAP (the skill's own checker), grade.sh RUN SESSIONDIR (score vs reference)
 [[ -x $LAB/check.sh ]] && "$LAB/check.sh" "$RUN" "$SNAP" > "$RUN/check.txt" 2>&1
-[[ -x $LAB/grade.sh ]] && "$LAB/grade.sh" "$RUN" "$HOME/.omp/lab/sessions/$VARIANT/$N" > "$RUN/grade.txt" 2>&1
+[[ -x $LAB/grade.sh ]] && "$LAB/grade.sh" "$RUN" "$HSESS" > "$RUN/grade.txt" 2>&1
 here=$(cd "$(dirname "$0")/.." && pwd)
-sess=$(find "$HOME/.omp/lab/sessions/$VARIANT/$N" -maxdepth 1 -name '*.jsonl' -print -quit 2>/dev/null)
+sess=$(find "$HSESS" -maxdepth 1 -name '*.jsonl' -print -quit 2>/dev/null)
+[[ -n $sess ]] && echo "$sess" > "$RUN/session.txt"
 if [[ -n $sess ]] && python3 -I "$here/trace.py" "$sess" --json > "$RUN/trace.json" 2>/dev/null; then
   wall=$(sed -n 's/.*wall=\([0-9]*\)s.*/\1/p' "$RUN/result.txt")
   python3 -I -c 'import json,sys; t=json.load(open(sys.argv[1])); print(json.dumps({"total_tokens": t["total_tokens"], "duration_ms": int(sys.argv[2]) * 1000}))' \

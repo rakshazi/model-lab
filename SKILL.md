@@ -3,7 +3,7 @@ name: model-lab
 description: "Write, improve, restructure or test an agent skill (a SKILL.md with its references and scripts), or any prompt, template or checker a model has to follow. Use when the user asks to make a skill for a task, to turn a finished session into a skill, to fix a skill that agents ignore, skip steps of or loop on, to split or dedupe a bloated one, or to prove that a skill beats no skill. Use it too when a skill does not trigger, for anything a small local model (1.7B to 27B) will run, and when the user asks what a harness actually sends the model. Holds measured design rules, the Agent Skills format, and a test stand on omp, Pi and Claude Code."
 compatibility: "The writing rules need nothing. The test stand is Linux-only: bash, git, rsync, python3, script (util-linux), docker and just, with omp or Pi inside the IISD sandbox (github.com/rakshazi/IISD-sandbox) and a local OpenAI-compatible model server. The Claude Code stand needs the claude CLI and its auth."
 metadata:
-  version: "3.2.2"
+  version: "3.3.0"
   author: rakshazi
   source: https://github.com/rakshazi/model-lab
 license: "GPL-3.0-or-later (code), CC-BY-SA-4.0 (Markdown), CC0-1.0 (assets); see LICENSES/ and REUSE.toml."
@@ -44,13 +44,13 @@ The run behind each rule, and the rarer rules, by the failure that sends you the
 
 | Read | When |
 |---|---|
-| [Before writing a rule](references/prompts.md#before-writing-a-rule) | choosing the model to tune on; a big model will run the skill too; a branch leaves the call to someone else |
+| [Before writing a rule](references/prompts.md#before-writing-a-rule) | choosing the model to tune on; every variant scores at the ceiling; a big model will run the skill too; a branch leaves the call to someone else |
 | [Output shape](references/prompts.md#output-shape) | the output trails past its end, glues words together, picks the middle label, or echoes a schema key |
 | [Input](references/prompts.md#input) | the model acts on its input, quotes an old block as the request, copies a repo file, or opens every link up front |
 | [Examples and templates](references/prompts.md#examples-and-templates) | example values or placeholders reach the output, an empty section gets invented content, or a shorter tool description changes the tool picked |
 | [Rules that do not bind](references/prompts.md#rules-that-do-not-bind) | a rule is stated and broken in one run, or the model takes the `NONE` or `ask` exit on inputs with content |
 | [Long outputs](references/prompts.md#long-outputs) | one generation cannot hold the output: miscited long writes, a fix pass that returns the document unchanged |
-| [Scripts over prose](references/agentic.md#scripts-over-prose) | writing a checker; one passes wrong content, rejects valid content, or accepts a citation to the neighbouring function |
+| [Scripts over prose](references/agentic.md#scripts-over-prose) | writing a checker; one passes wrong content, rejects valid content, fails on a draft it was never tested on, or accepts a citation to the neighbouring function |
 | [Gates and the loop surface](references/agentic.md#gates-and-the-loop-surface) | a run loops on one tool call, passes a gate by editing something else, fills a table with `clean`, ships a proof that cannot fail, or spends its budget on paperwork |
 | [Scaffolding and environment](references/agentic.md#scaffolding-and-environment) | controls fail in bulk with no visible cause, scaffolding survives the run, or a race proof will not hold still |
 
@@ -85,7 +85,7 @@ The lab runs the skill inside a real agent harness. Pick one and read its page b
 | Agent | Runner | Its page, and when to reopen it |
 |---|---|---|
 | omp, local models | `scripts/omp/run.sh`, `scripts/omp/probe.sh` | [references/agents/omp.md](references/agents/omp.md): a run shows a tool, a scanner name or an instruction the skill never gave; a rule vanishes after a rollover; before changing `SYSPROMPT`, `TOOLS` or `OMPFLAGS`; a path has to resolve inside the container; after an omp update |
-| Pi, local models | `scripts/pi/run.sh` | [references/agents/pi.md](references/agents/pi.md): a run shows a tool, a persona or a context file the skill never named; a subagent fails to start or leaves no trace; two labs share variant names; output paths point into the container; the only question is which tool the model reaches for first; a Pi extension calls a model; after a Pi update |
+| Pi, local models | `scripts/pi/run.sh` | [references/agents/pi.md](references/agents/pi.md): a run shows a tool, a persona or a context file the skill never named; a subagent fails to start or leaves no trace; a run finds another variant's files; output paths point into the container; the only question is which tool the model reaches for first; a Pi extension calls a model; after a Pi update |
 | Claude Code, cloud models, cold A/B against the old skill or none | `scripts/claude-code/run.sh`, `scripts/claude-code/summary.py`, `scripts/claude-code/blind.py`, defaults in `assets/claude-code/` | [references/agents/claude-code.md](references/agents/claude-code.md): its own procedure replaces the one below; a run is denied a tool; a "cold" model shows house knowledge; your own session's hooks refuse the scratch repo; a score looks too good to read |
 
 ### Layout
@@ -97,12 +97,11 @@ $LAB/                          # /tmp/<skill>-lab
   literals.txt                 # optional: fixed strings from the reference output, for grade.sh
   check.sh  RUN SNAP           # optional: the skill's own checker on the output (exec bit)
   grade.sh  RUN SESSDIR        # optional: copy or symlink scripts/grade.sh (exec bit)
-  runs/<variant>/<n>/          # repo/, prompt.txt, session.log, result.txt, status.txt, outputs,
-                               #   trace.json, timing.json, grading.json
+  snap/<variant>/              # the skill frozen on first use of a variant name
+  runs/<variant>/<n>/          # repo/, session/, session.txt, prompt.txt, session.log, result.txt,
+                               #   status.txt, outputs, trace.json, timing.json, grading.json
   runs/<variant>/benchmark.json  # scripts/summary.py: mean/stddev, delta against the baseline
 ```
-
-The frozen skill snapshot per variant and the session files live under the agent's own directory; its page names the paths.
 
 ### Scripts
 
@@ -150,7 +149,6 @@ The local runners call `check.sh`, `grade.sh` and `assert.py` after every run an
 
 - **Never edit a script a running batch executes.** Bash reads it as it goes, so the change lands mid-run. Wait for the batch, or edit a copy.
 - **One netless session at a time** (a flock). The local runners sleep 8 s before starting so the previous container's lock has been released.
-- **The local runners key snapshots and sessions by variant name, with no lab in the path.** Two labs that reuse a name share a stale snapshot and overwrite each other's sessions: give each lab its own names (`a-old`, `b-old`).
 - `pgrep -f <pattern>` and `pkill -f` match their own command line, so anchor the pattern.
 - Run real repositories only inside the sandbox. A host-side test of a "safe to run?" classifier ran a plugin installer and opened a browser tab.
 - The skill under test is often its own git repo, and its owner commits. The lab never does.

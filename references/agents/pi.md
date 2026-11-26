@@ -5,17 +5,17 @@ Local models through Pi in the netless sandbox ([IISD-sandbox](https://github.co
 ## Running a batch
 
 ```bash
-for n in 1 2 3; do SKILL=<skill> LAB=/tmp/<skill>-lab ARGS='<the task as a user would type it>' MAXTIME=20m \
-  bash scripts/pi/run.sh v1 $n llama-swap/qwen3.5-4b; done > /tmp/<skill>-lab/runs/v1.log 2>&1
+for n in 1 2 3; do SKILL=<skill> LAB=/tmp/<skill>-lab ARGS='<the task as a user would type it>' MAXTIME=20m THINKING=medium \
+  bash scripts/pi/run.sh v1 $n llama-swap/gemma4-26b-a4b; done > /tmp/<skill>-lab/runs/v1.log 2>&1
 ```
 
-- **The model id is the one `~/.pi/agent/models.json` gives it**; `llama-swap/qwen3.5-4b` and `llama-swap/qwen3.8-27b` are examples.
+- **The model id is the one `~/.pi/agent/models.json` gives it**; `llama-swap/gemma4-26b-a4b` and `llama-swap/qwen3.5-4b` are examples. `THINKING` sets Pi's `--thinking` level; pin it, or a reasoning model thinks at whatever `settings.json` says (`xhigh` gave a 26B MoE 12k to 30k characters of thinking per run).
 - **`ARGS` is what a user types after `/skill:<skill>`.** Pi expands the command itself, so the prompt needs no wrapper.
-- **The skill is read from `~/.pi/agent/skills/<skill>`** and frozen at `~/.pi/lab/skills/VARIANT/SKILL/`. Pi wants `name:` to match the parent directory, so the snapshot keeps the skill's own directory name and reaches the run through `-ns --skill`.
+- **The skill is read from `~/.pi/agent/skills/<skill>`** and frozen at `$LAB/snap/VARIANT/SKILL/`. Pi wants `name:` to match the parent directory, so the snapshot keeps the skill's own directory name and reaches the run through `-ns --skill`.
 - **Lean by default.** `-ne -ns -nc`, a blank append and Pi's four default tools. Each comes back through its knob: `EXT`, `CONTEXT=1`, `APPEND=1`, and `TOOLS` by name. An extension tool also needs its extension in `EXT`.
 - **Pi has no `--max-time`.** `run.sh` starts a watchdog that, after `MAXTIME`, kills the container found by its workspace mount: `docker ps --filter volume=/home/agent/workspace/<cwd with / turned into ->`. The sandbox runs `docker run -it`, and with a TTY the docker client forwards no signals, so killing the client leaves the container alive. A 25 s limit on a task that sleeps 300 s ended as `exit=137 wall=33s timeout=1` with no container left; `result.txt` carries the `timeout=1`.
-- **Sessions are keyed by variant and run number, with no lab in the path.** Two labs that reuse a variant name overwrite each other's `~/.pi/lab/sessions/<variant>/<n>/`, and `session.txt` in the earlier lab then points at a deleted file. Give each lab its own variant names (`a-old`, `b-old`), or read the session before the second lab runs.
-- **`trace.py` and `summary.py` read Pi sessions unchanged.** Event shape, usage fields, `stopReason` and tool-call blocks match omp's. `run.sh` writes the session path to `session.txt`, and `summary.py` reads that before it falls back to the omp location.
+- **A run sees one variant's skill and no other run.** The sandbox mounts all of `~/.pi`, so `run.sh` keeps snapshots in `$LAB/snap/` and sessions in `RUN/session/`, and stages only this variant's skill and an empty session dir in `~/.pi/lab`, wiped after the run; `~/.pi/lab.lock` keeps two runners off it. With every snapshot under the mount, a 4B looking for the audit script found all of them, ran the previous variant's audit eleven times, never met the new check, and stopped on two invented decisions the new audit fails. The installed skills in `~/.pi/agent/skills` stay visible, so a lab on an installed skill can still reach the live copy.
+- **`trace.py` and `summary.py` read Pi sessions unchanged.** Event shape, usage fields, `stopReason` and tool-call blocks match omp's. `run.sh` writes the session path to `session.txt`, and `summary.py` reads it.
 - **A skill that names its script by installed path runs the live copy.** A skill that calls `~/.pi/agent/skills/<skill>/scripts/x.sh` executed that file while its body came from the snapshot. For such a skill the rule "the live skill can be edited while a batch runs" is false: wait for the batch.
 - **An output outside the repo needs the lab hook.** A file the skill writes under `~/.pi/` is still there on the next run, which finds it and treats it as existing work. `assets/check-outside.example.sh` moves the files the run wrote into `RUN/outside/` before checking them.
 - **Paths in the output are container paths.** A file written in the sandbox cites `/home/agent/workspace/-tmp-...-repo`. A host-side check has to resolve against `RUN/repo` and drop any state file that recorded the container path.

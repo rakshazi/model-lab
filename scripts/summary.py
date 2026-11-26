@@ -16,8 +16,8 @@ then mean and stddev per variant. Writes LAB/runs/<VARIANT>/benchmark.json for e
 variant; with two or more, the first is the baseline and every later one gets a "delta".
 
 Reads per run: result.txt, grading.json (scripts/assert.py), grade.txt (scripts/grade.sh),
-status.txt, and the session through scripts/trace.py: the path in session.txt (scripts/pi/run.sh
-writes it), else ~/.omp/lab/sessions/<VARIANT>/<N>/.
+status.txt, and the session through scripts/trace.py: the path in session.txt (both local
+runners write it), else RUN/session/*.jsonl.
 
 Options:
   --signal TEXT  tool-result text that means "done", for the after-signal column
@@ -50,7 +50,7 @@ def run_row(rundir, variant, n, signal, outputs):
     status = [l[3:] for l in read(os.path.join(rundir, "status.txt")).splitlines() if l.strip()]
     row["changed"] = [p for p in status if p not in outputs]
     sess = read(os.path.join(rundir, "session.txt")).split("\n")[:1]
-    sess = [s for s in sess if s] or glob.glob(os.path.expanduser(f"~/.omp/lab/sessions/{variant}/{n}/*.jsonl"))
+    sess = [s for s in sess if s] or glob.glob(os.path.join(rundir, "session", "*.jsonl"))
     if sess:
         cmd = [sys.executable, "-I", TRACE, sess[0], "--json"] + (["--after", signal] if signal else [])
         out = subprocess.run(cmd, capture_output=True, text=True)

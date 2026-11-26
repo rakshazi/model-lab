@@ -24,8 +24,9 @@
 # After the run, when present: $LAB/check.sh RUN SNAP, $LAB/grade.sh RUN SESSDIR,
 # and scripts/assert.py RUN when $LAB/evals.json exists.
 # Out: $LAB/runs/VARIANT/N/{repo,prompt.txt,session.log,session.txt,result.txt,status.txt,trace.json,
-#      timing.json,COLLECT files,check.txt,grade.txt,grading.json}
-# Sessions: ~/.pi/lab/sessions/VARIANT/N (under ~/.pi because the container mounts it).
+#      timing.json,COLLECT files,check.txt,grade.txt,grading.json,session/}
+# Snapshots: $LAB/snap/VARIANT/SKILL. During a run only ~/.pi/lab exists in the mount, holding
+# this variant's skill and the session; the session moves to RUN/session afterwards.
 # Exit: 0 after any run (the run's own exit is in result.txt); 2 on bad invocation.
 #
 # Example: SKILL=my-skill ARGS='add a --json flag to the list command' TOOLS=read,bash,edit,write,Agent \
@@ -46,12 +47,17 @@ case $MAXTIME in
   *) echo "error: MAXTIME=$MAXTIME is not 90s, 20m or 2h" >&2; exit 2 ;;
 esac
 # the snapshot keeps the skill's own dir name, because Pi wants name: to match the parent dir
-SNAP=$HOME/.pi/lab/skills/${SKILLSNAP:-$VARIANT}/$SKILL
+SNAP=$LAB/snap/${SKILLSNAP:-$VARIANT}/$SKILL
 [[ -d $SNAP ]] || { mkdir -p "$SNAP"; cp -r "$SRC/." "$SNAP/"; rm -rf "$SNAP/.git"; }
-CSNAP=/home/agent/.pi/lab/skills/${SKILLSNAP:-$VARIANT}/$SKILL
-HSESS=$HOME/.pi/lab/sessions/$VARIANT/$N
+# the container mounts all of ~/.pi, so it gets a staging dir holding this variant's skill alone
+STAGE=$HOME/.pi/lab
+exec 8>"$HOME/.pi/lab.lock"
+flock -n 8 || { echo "error: another lab run holds $HOME/.pi/lab.lock" >&2; exit 2; }
+rm -rf "$STAGE"; mkdir -p "$STAGE/skill" "$STAGE/session"; cp -r "$SNAP" "$STAGE/skill/"
+CSNAP=/home/agent/.pi/lab/skill/$SKILL
 RUN=$LAB/runs/$VARIANT/$N
-rm -rf "$RUN" "$HSESS"; mkdir -p "$RUN"
+HSESS=$RUN/session
+rm -rf "$RUN"; mkdir -p "$RUN"
 git clone -q "$LAB/base" "$RUN/repo" && git -C "$RUN/repo" remote remove origin
 
 # Pi expands /skill:NAME in print mode itself, so the prompt is what a user types
@@ -60,7 +66,7 @@ PROMPT="/skill:$SKILL${ARGS:+ $ARGS}"
 printf '%s\n' "$PROMPT" > "$RUN/prompt.txt"
 
 cmd=(just -f "$HOME/.pi/docker/justfile" run netless --model "$MODEL" -p "$PROMPT" --offline -na -ns -ne
-  --tools "${TOOLS:-read,bash,edit,write}" --session-dir "/home/agent/.pi/lab/sessions/$VARIANT/$N")
+  --tools "${TOOLS:-read,bash,edit,write}" --session-dir /home/agent/.pi/lab/session)
 [[ -z ${NOSKILL:-} ]] && cmd+=(--skill "$CSNAP")
 for e in ${EXT:-}; do cmd+=(-e "/home/agent/.pi/agent/$e"); done
 [[ -n ${SYSPROMPT:-} ]] && cmd+=(--system-prompt "$SYSPROMPT") && printf '%s\n' "$SYSPROMPT" > "$RUN/sysprompt.txt"
@@ -91,6 +97,7 @@ rc=$?
 kill "$wd" 2>/dev/null
 wall=$(( $(date +%s) - t0 ))
 echo "exit=$rc wall=${wall}s timeout=$([[ -f $RUN/timeout.txt ]] && echo 1 || echo 0)" > "$RUN/result.txt"
+cp -r "$STAGE/session" "$HSESS"; rm -rf "$STAGE"
 
 for f in ${COLLECT:-}; do [[ -f $RUN/repo/$f ]] && cp "$RUN/repo/$f" "$RUN/"; done
 ( cd "$RUN/repo" && git status --short ) > "$RUN/status.txt"

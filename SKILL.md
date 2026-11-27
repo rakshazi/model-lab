@@ -1,9 +1,9 @@
 ---
 name: model-lab
-description: "Write, improve, restructure or test an agent skill (a SKILL.md with its references and scripts), or any prompt, template or checker a model has to follow. Use when the user asks to make a skill for a task, to turn a finished session into a skill, to fix a skill that agents ignore, skip steps of or loop on, to split or dedupe a bloated one, or to prove that a skill beats no skill. Use it too when a skill does not trigger, for anything a small local model (1.7B to 27B) will run, and when the user asks what a harness actually sends the model. Holds measured design rules, the Agent Skills format, and a test stand on omp, Pi and Claude Code."
-compatibility: "The writing rules need nothing. The test stand is Linux-only: bash, git, rsync, python3, script (util-linux), docker and just, with omp or Pi inside the IISD sandbox (github.com/rakshazi/IISD-sandbox) and a local OpenAI-compatible model server. The Claude Code stand needs the claude CLI and its auth."
+description: "Write, improve, restructure or test an agent skill (a SKILL.md with its references and scripts), or any prompt, template or checker a model has to follow. Use when the user asks to make a skill for a task, to turn a finished session into a skill, to fix a skill that agents ignore, skip steps of or loop on, to split, dedupe, merge or port existing skills without losing what they hold, or to prove that a skill beats no skill. Use it too when a skill does not trigger, for anything a small local model (1.7B to 27B) will run, and when the user asks what a harness actually sends the model. Holds measured design rules, the Agent Skills format, and a test stand on omp, Pi and Claude Code."
+compatibility: "Meant for a strong model to run; it is too long for a small local one. The writing rules need nothing else. The test stand is Linux-only: bash, git, rsync, python3, script (util-linux), docker and just, with omp or Pi inside the IISD sandbox (github.com/rakshazi/IISD-sandbox) and a local OpenAI-compatible model server. The Claude Code stand needs the claude CLI and its auth."
 metadata:
-  version: "3.3.0"
+  version: "3.4.0"
   author: rakshazi
   source: https://github.com/rakshazi/model-lab
 license: "GPL-3.0-or-later (code), CC-BY-SA-4.0 (Markdown), CC0-1.0 (assets); see LICENSES/ and REUSE.toml."
@@ -11,7 +11,15 @@ license: "GPL-3.0-or-later (code), CC-BY-SA-4.0 (Markdown), CC0-1.0 (assets); se
 
 # model-lab
 
-A skill for writing skills. Two jobs, one body of evidence: write a skill a model can execute, then measure whether it does. The rules were measured on small local models (1.7B to 27B), where a weak instruction fails loudly; a skill that holds there holds on a larger model, minus the two crutches named below. Every rule was paid for with a run that went wrong, and its receipt sits in `references/`.
+A skill for writing skills, meant for a strong model to run: it writes, maintains and tests skills that a weaker model will execute. The rules were measured on small local models (1.7B to 27B), where a weak instruction fails loudly; a skill that holds there holds on a larger model, minus the two crutches named below. Every rule was paid for with a run that went wrong, and its receipt sits in `references/`.
+
+Pick the job. "Writing the skill" and "The skill as a file tree" bind in all three.
+
+| Job | Read |
+|---|---|
+| Write a skill, or fix one that agents ignore, skip steps of, loop on or never trigger | "Writing the skill" and "The skill as a file tree", below |
+| Dedupe, split, rewrite, merge or port a skill that works | "Maintaining a skill", below |
+| Prove a skill against no skill, or one variant against another | [Evaluating](references/evaluating.md) before the first run; [Pitfalls](references/evaluating.md#pitfalls) again before starting a batch or touching a file while one runs; [Reading the numbers](references/evaluating.md#reading-the-numbers) before believing a score. An A/B on Claude Code takes its procedure from its own page ("Agents", below), and the rest of this row still applies |
 
 ## Writing the skill
 
@@ -20,7 +28,7 @@ The method, in order:
 1. **Target model first, a stronger one as the reference.** Write and tune against the smallest model that will run the skill: prompts carry upward fairly well and lose ground going down. Run Haiku or the 27B on the same input to see what more intelligence does with it. If it fails too, the input is the problem, so preprocess it. If only the small model fails, a rule has room. Its transcript is the review material: the steps it took that the small model skipped, and the places it had to guess, each become a clause.
 2. **Checker before prompt.** Write the script that judges the output, then run it on your own example. It finds the example's defects before any model does.
 3. **Move every judgment you can out of prose.** Into the sampler (grammar, `json_schema` enum, prefill, bounded reasoning), the template (the empty branch, the parse contract), or a script (counts, citations, cleanup). A sentence is the weakest place for a rule; use it for what nothing else can hold. A script also binds every model alike, so it is the part of a skill that survives a model switch.
-4. **One change per variant, three runs each** (Evaluating, below).
+4. **One change per variant, three runs each:** [Evaluating](references/evaluating.md), read before the first run and again before believing its score.
 
 The rules that fire on almost every skill:
 
@@ -63,7 +71,7 @@ The Agent Skills format ([agentskills.io](https://agentskills.io)) is the contai
 - **Everything else loads on demand, and only when something says when.** Link each reference with the moment to read it, and cross-reference the references: a file that touches another file's topic names that file and section. Knowledge one file away with no pointer gets skipped.
 - **Alternatives get a page each** and one table in the body (the "Agents" table below).
 - **Scripts take `--help`, never prompt, and fail with one line that names the fix.** List them in the body.
-- **Prove it against no skill** (Evaluating, below), and prove the description fires with twenty labelled queries.
+- **Prove it against no skill** ([Evaluating](references/evaluating.md), read before the first run), and prove the description fires with twenty labelled queries.
 
 | Read | When |
 |---|---|
@@ -74,11 +82,11 @@ The Agent Skills format ([agentskills.io](https://agentskills.io)) is the contai
 | [Scripts](references/skill-format.md#scripts) | bundling a script, or the agent rewrites the same helper every run |
 | [Evals in the spec's shape](references/skill-format.md#evals-in-the-specs-shape) | shipping evals with the skill, or mapping a lab onto the spec's workspace |
 
-## Evaluating
+## Maintaining a skill
 
-A lab answers one question: what does THIS model do with THIS skill on THIS repo. Everything below exists because a run once measured something other than that.
+A dedupe, split, merge or port drops facts and adds violations no lint shows. First copy the tree to `/tmp/<skill>-old`; log each cut and its home in `/tmp/<skill>-old.moves.md`; end with two cold read-only audits (lost facts, these rules): [Procedure](references/maintenance.md#procedure), read before the first edit and before the handoff.
 
-### Agents
+## Agents
 
 The lab runs the skill inside a real agent harness. Pick one and read its page before the first run: it holds the run command, the knobs, and what that harness sends the model on its own.
 
@@ -86,24 +94,9 @@ The lab runs the skill inside a real agent harness. Pick one and read its page b
 |---|---|---|
 | omp, local models | `scripts/omp/run.sh`, `scripts/omp/probe.sh` | [references/agents/omp.md](references/agents/omp.md): a run shows a tool, a scanner name or an instruction the skill never gave; a rule vanishes after a rollover; before changing `SYSPROMPT`, `TOOLS` or `OMPFLAGS`; a path has to resolve inside the container; after an omp update |
 | Pi, local models | `scripts/pi/run.sh` | [references/agents/pi.md](references/agents/pi.md): a run shows a tool, a persona or a context file the skill never named; a subagent fails to start or leaves no trace; a run finds another variant's files; output paths point into the container; the only question is which tool the model reaches for first; a Pi extension calls a model; after a Pi update |
-| Claude Code, cloud models, cold A/B against the old skill or none | `scripts/claude-code/run.sh`, `scripts/claude-code/summary.py`, `scripts/claude-code/blind.py`, defaults in `assets/claude-code/` | [references/agents/claude-code.md](references/agents/claude-code.md): its own procedure replaces the one below; a run is denied a tool; a "cold" model shows house knowledge; your own session's hooks refuse the scratch repo; a score looks too good to read |
+| Claude Code, cloud models, cold A/B against the old skill or none | `scripts/claude-code/run.sh`, `scripts/claude-code/summary.py`, `scripts/claude-code/blind.py`, defaults in `assets/claude-code/` | [references/agents/claude-code.md](references/agents/claude-code.md): its own procedure replaces the one on the Evaluating page; a run is denied a tool; a "cold" model shows house knowledge; your own session's hooks refuse the scratch repo; a score looks too good to read |
 
-### Layout
-
-```
-$LAB/                          # /tmp/<skill>-lab
-  base/                        # sealed fixture: one commit, no answer key (scripts/seal.sh)
-  evals.json                   # spec-shaped eval: prompt, expected_output, assertions (scripts/assert.py)
-  literals.txt                 # optional: fixed strings from the reference output, for grade.sh
-  check.sh  RUN SNAP           # optional: the skill's own checker on the output (exec bit)
-  grade.sh  RUN SESSDIR        # optional: copy or symlink scripts/grade.sh (exec bit)
-  snap/<variant>/              # the skill frozen on first use of a variant name
-  runs/<variant>/<n>/          # repo/, session/, session.txt, prompt.txt, session.log, result.txt,
-                               #   status.txt, outputs, trace.json, timing.json, grading.json
-  runs/<variant>/benchmark.json  # scripts/summary.py: mean/stddev, delta against the baseline
-```
-
-### Scripts
+## Scripts
 
 Paths are relative to the skill root. Each one takes `--help`, exits 2 with a one-line error on bad input, and never prompts.
 
@@ -120,37 +113,5 @@ Paths are relative to the skill root. Each one takes `--help`, exits 2 with a on
 | `assets/check-outside.example.sh` | the skill under test writes outside the repo: a `check.sh` that collects the output first |
 
 The local runners call `check.sh`, `grade.sh` and `assert.py` after every run and write `trace.json` and `timing.json`.
-
-### Procedure
-
-1. **Fixture.** `PREP='go mod vendor' KEEP=vendor scripts/seal.sh <src-repo> $LAB AGENTS.md CLAUDE.md`. Exclude the reference output and anything that leaks it. One fresh commit, because a cloud subagent once scored 31 of 32 by running `git show HEAD~1:AGENTS.md`. The sandbox has no network, so dependencies come in through PREP.
-2. **Evals and graders.** Write `$LAB/evals.json` from `assets/evals.example.json`: the user's prompt, the expected output in plain words, the `outputs` to grade, the `context` files the judge treats as truth, and five to ten assertions. Use a script assertion for anything a grep can settle (a command named, an invented target absent, no scaffolding left) and a sentence for judgment ("warns that db-reset wipes the local database"). A good assertion separates a good draft from a bad one: one that passes in every run, skill or no skill, measures nothing, so replace it. Literals in `literals.txt` stay as the smoke alarm, and the skill's own checker goes in `check.sh`.
-3. **Probe** what the model receives, once per setup, before blaming any prompt. The agent's page has the command.
-4. **Baselines**: three runs with `NOSKILL=1` (the bare task, same `ARGS`), which shows what the skill adds at all. Then the current skill, three runs. Then **one change per variant**, three runs each. A snapshot is taken on first use of a variant name, so the live skill can be edited while a batch runs, unless it calls its own script by installed path: that executes the live file.
-5. **Run** in the background, one batch at a time, from the skill root, with the agent's runner: `bash scripts/<agent>/run.sh <variant> <n> <model>`. The model id is required and comes from your harness config.
-6. **Read** the batch: `python3 -I scripts/summary.py $LAB noskill v1 v2 --signal '<done signal text>'` gives the table and the deltas. Then, per run that stands out: `status.txt` (did it edit the repo?), `check.txt`, `grading.json` (the evidence behind each FAIL), and `python3 -I scripts/trace.py <session.jsonl> --after '<signal>'` for what the model did once it was told it had finished. Read the drafts against the reference last, and read them yourself.
-7. **File the lesson**: the rule, then the run that taught it, as one bullet in the reference section it belongs to. `AGENTS.md` in this directory has the filing rules.
-
-### Reading the numbers
-
-- **n=3 spreads 0 to 15 within one variant.** That is wider than any difference between two variants, so a literal score is a smoke alarm, never the verdict. A zero is usually a timeout or an output cap: read the trace before reading the score.
-- **An output cap is a tax on the batch.** Thinking-mode sampling (temp 0.6, top-p 0.95, top-k 20, no presence penalty; Qwen recommends the penalty for instruct mode only) leaves runaway generations in. Roughly one run in five spends 11 to 13 silent minutes on one tool call that hits the 32768-token output cap (`stopReason: length`), and then times out. `trace.py` prints `OUTPUT CAP` for it, and it says nothing about the skill.
-- **A pass/fail cell at five runs cannot tell 40% from 75%.** One tool description scored 1 of 5 in a batch and 15 of 20 on the cell alone. Four stray tool calls in 75 runs against zero for the baseline vanished at 60 runs per arm, where the baseline produced the only one. When one cell carries the verdict, rerun that cell at 20 and leave the batch alone.
-- **Repeat before believing, one change at a time.** At temperature 0.1 a key term survived under one prompt and died under the next, with no rule touching it. A verdict needs the same input moved the same way twice. Two review suggestions applied together graded as a gain (83 to 97 facts) and hid that one of them was an example leak; split into two variants, one was kept and the other refused.
-- **A fix proves itself in the trace.** The question is whether the mechanism changed (the warning gone, the loop shorter, the minutes after the done signal), and a batch average can't answer it.
-- **Grade the content, never the shape.** Headers, sections and markers all appeared while the inside carried fabricated paths and dropped the final request. Grep every literal (path, identifier, test name) against the source, plus two or three literals per input that survive only if the pending request did.
-- **Grade the outcome the user asked for.** Pick the outcome metric before the first variant and report proof quality as a separate axis: a skill can buy perfect citations for twice the wall time while the bugs found stay flat. The run that paid for it: [Gates and the loop surface](references/agentic.md#gates-and-the-loop-surface), read when proof work eats the budget.
-- **A pass can come from an edited repo.** A gate that checks only the output gets passed by changing something else, and `status.txt` shows it.
-- **A judge has a noise floor.** Grade blind, then regrade the unchanged arm with a second judge and a new seed: [Grading](references/agents/claude-code.md#grading), read before any model judges a batch.
-- **Read where the time went.** A 27B never wrote the file: 45 minutes of reading, thinking blocks of 20 to 28k characters. A slow model's failure is often budget, and `trace.py` shows it.
-- **Exit 0 proves nothing about existence.** Check a named target against the file that defines it.
-
-### Pitfalls
-
-- **Never edit a script a running batch executes.** Bash reads it as it goes, so the change lands mid-run. Wait for the batch, or edit a copy.
-- **One netless session at a time** (a flock). The local runners sleep 8 s before starting so the previous container's lock has been released.
-- `pgrep -f <pattern>` and `pkill -f` match their own command line, so anchor the pattern.
-- Run real repositories only inside the sandbox. A host-side test of a "safe to run?" classifier ran a plugin installer and opened a browser tab.
-- The skill under test is often its own git repo, and its owner commits. The lab never does.
 
 Editing this skill: read `AGENTS.md` in this directory first.

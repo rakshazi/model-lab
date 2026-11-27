@@ -14,7 +14,9 @@ Agent Skills repo: Markdown an agent reads before it writes, restructures or tes
 - A lesson that contradicts or refines a bullet already there edits that bullet.
 - The mechanism is the lesson; the repo and the skill it was found in are details. Name them by kind ("one audit skill", "a Go service repo").
 - Prompt and skill-text lessons go to `references/prompts.md`, checker, gate and loop lessons to `references/agentic.md`. What one harness does goes to its page under `references/agents/`, with its runner in `scripts/<agent>/` and its defaults in `assets/<agent>/`.
-- `SKILL.md` stays harness-neutral: the "Agents" table is the only place an agent is named. A lesson that fires on most skills earns one line under "The rules that fire on almost every skill", and a rule for reading results goes under "Reading the numbers".
+- What a dedupe, restructure, merge or port of an existing skill lost or added, and how an audit found it, goes to `references/maintenance.md`.
+- `SKILL.md` holds what binds in every job: the jobs table, the method, the rules that must survive a compaction, the routing tables, the "Agents" and "Scripts" tables. A runbook only one job walks lives on its page: `references/maintenance.md`, `references/evaluating.md`.
+- `SKILL.md` stays harness-neutral: the "Agents" table is the only place an agent is named. A lesson that fires on most skills earns one line under "The rules that fire on almost every skill", and a rule for reading results goes under "Reading the numbers" in `references/evaluating.md`.
 - `SKILL.md` links a reference as `[Section](references/file.md#anchor)` with the moment to read it on the same line. A trigger names a failure the reader can see; "read when writing X" fires on every item and never gets read.
 - A reference that touches another file's topic points at it, in the form `references/file.md`, "Section" (read when ...). The receipt keeps its one home; the pointer is how a reader inside one file reaches it. The lint resolves that form and no other.
 - What the Agent Skills format and its guides say goes to `references/skill-format.md`, with this lab's measurement next to the recommendation it sharpens or contradicts.
@@ -24,6 +26,7 @@ Agent Skills repo: Markdown an agent reads before it writes, restructures or tes
 ## Boundaries
 
 - Always: `python3 -I evals/lint.py` exits 0 before handoff.
+- Always: a pass that moves or cuts text in this skill follows `references/maintenance.md`, "Procedure", and ends with its two audits.
 - Never: details of one machine or employer (home paths, ports, company, project or ticket names, private skill names, personal rules or preferences). The lint checks the generic kinds and reads your private names from `evals/leaks.local`, one regex per line. That file is gitignored: a denylist committed to the repo is the leak.
 - Never: edit a script while a batch that executes it is running; bash reads the file as it goes.
 

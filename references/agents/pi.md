@@ -1,6 +1,6 @@
 # Pi as the test stand
 
-Local models through Pi in the netless sandbox ([IISD-sandbox](https://github.com/rakshazi/IISD-sandbox), set up for Pi at `~/.pi/docker`). The lab procedure is in `SKILL.md`; this page is what Pi changes. Measured with a 27B writing an implementation plan through a skill that calls a reviewer subagent. Each bullet is the fact, then the run or the source line behind it. Re-probe after a Pi update: `trace.py SESSION --system` answers most of "What the model receives" in one call.
+Local models through Pi in the netless sandbox ([IISD-sandbox](https://github.com/rakshazi/IISD-sandbox), set up for Pi at `~/.pi/docker`). The lab procedure is in `references/evaluating.md`, "Procedure" (read before the first run); this page is what Pi changes. Measured with a 27B writing an implementation plan through a skill that calls a reviewer subagent. Each bullet is the fact, then the run or the source line behind it. Re-probe after a Pi update: `trace.py SESSION --system` answers most of "What the model receives" in one call.
 
 ## Running a batch
 

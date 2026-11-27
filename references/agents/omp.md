@@ -1,6 +1,6 @@
 # omp as the test stand
 
-Local models through omp in the netless sandbox ([IISD-sandbox](https://github.com/rakshazi/IISD-sandbox), cloned to `~/.omp/docker`). The lab procedure is in `SKILL.md`; this page is what omp adds to it. Each bullet is the fact, then what `scripts/omp/run.sh` does about it. Re-probe after an omp update.
+Local models through omp in the netless sandbox ([IISD-sandbox](https://github.com/rakshazi/IISD-sandbox), cloned to `~/.omp/docker`). The lab procedure is in `references/evaluating.md`, "Procedure" (read before the first run); this page is what omp adds to it. Each bullet is the fact, then what `scripts/omp/run.sh` does about it. Re-probe after an omp update.
 
 ## Running a batch
 

@@ -4,7 +4,7 @@ For a skill a cloud model will run (Sonnet, Haiku, Opus) the way a user's Claude
 
 ## Procedure
 
-This replaces the local-model procedure in `SKILL.md`; the lab layout and the rules for reading a batch still apply. Script paths are relative to the skill root; each script takes `--help`.
+This replaces the "Procedure" section of `references/evaluating.md` (read its "Layout", "Reading the numbers" and "Pitfalls" before the first run: those three still apply). Script paths are relative to the skill root; each script takes `--help`.
 
 1. **Task.** A request a user would type, still open in the repo (grep the schema history and the code first), and hard enough to separate the arms. Write it to `$LAB/task.txt`.
 2. **Rubric** to `$LAB/rubric.md` before any run: 6 to 10 items scored 0/1, led by the user's outcome; cost is its own axis.

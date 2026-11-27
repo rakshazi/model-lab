@@ -56,6 +56,21 @@
         "Proposes running the task with and without the skill before trusting it",
         "Proposes labelled should-trigger and should-not-trigger queries for the description, or writes them"
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "my invoice-export skill and the older csv-tools skill overlap a lot. merge csv-tools into invoice-export and delete what's duplicated, i don't want two copies of anything. invoice-export is the one i publish",
+      "expected_output": "Before any edit, a copy of both skill trees outside the skills directory. A file that records each removed piece with its new home, or why it was dropped or kept private. After the edits, the mechanical checks, then two read-only audits in fresh contexts: one comparing the old trees with the new one for lost facts, pointers into deleted files and private details in the published skill, one checking the merged skill against the writing rules, its evals and its trigger queries. The author applies the fixes and hands over the record of moves, the audit counts and what was not checked.",
+      "files": [],
+      "assertions": [
+        "Copies both skill directories to a location outside any skills directory before the first edit",
+        "Keeps a written record of each removed piece and where it now lives, or why it was dropped",
+        "States that an audit comparing the old trees with the merged skill for lost facts runs after the edits, in a fresh context that did not see the editing session",
+        "States that a second audit, also in a fresh context, checks the merged skill against skill-writing rules, including its evals and trigger queries",
+        "Says both audits only report, and that the author applies the fixes",
+        "Checks the published skill for private details carried over from csv-tools",
+        "The final message names the record of moves and what was not checked, and does not say only that everything is covered"
+      ]
     }
   ]
 }
